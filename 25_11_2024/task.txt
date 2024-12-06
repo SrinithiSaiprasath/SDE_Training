@@ -1,4 +1,0 @@
-1.binary tree : 
-convert the binary tree to a binary search tree 
-left right top bottom 
-implement or create a binary tree from scratch 
