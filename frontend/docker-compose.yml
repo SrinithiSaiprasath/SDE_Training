@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80" 
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend 
+    ports:
+      - "5000:5000" 
+    environment:
+      - DB_HOST=localhost
+      - DB_USER=root
+      - DB_PASS=Root@12345
+      - DB_NAME=FSD_TEST_EMPLOYEE_MANAGEMENT_SYSTEM
+      - JWT_SECRET=PERIYA-SECRET-KEY # You can set your secret key here
+    depends_on:
+      - db 
+    volumes:
+      - ./backend:/app 
+    networks:
+      - app-network
+
+  db:
+    image: mysql:2.0 
+    environment:
+      MYSQL_ROOT_PASSWORD: Root@12345
+      MYSQL_DATABASE: FSD_TEST_EMPLOYEE_MANAGEMENT_SYSTEM 
+    ports:
+      - "3306:3306" 
+    volumes:
+      - db_data:/var/lib/mysql 
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge
