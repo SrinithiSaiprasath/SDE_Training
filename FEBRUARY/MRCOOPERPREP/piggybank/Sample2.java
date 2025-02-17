@@ -216,3 +216,29 @@ public class Sample2 {
 
     }
 }
+
+/*
+1.Encapsulation
+1.1) The attributes such as name, contact, balance, id, and password 
+are marked as private, meaning they cannot be accessed directly from outside the class.
+1.2) Methods like getAccId(), getPassword(), deposit(), and withdraw() provide 
+controlled access to these private attributes.
+
+2.Abstraction
+2.1) The user interacts with these classes via simplified public methods, 
+like deposit(), addSavings(), 
+and getGoalAnalysis(), without needing to understand the underlying logic.
+
+3.Composition
+3.1) The Account class contains objects of Budget and SavingsGoal, which represent the account's budgets and savings goals, respectively.
+This allows Account to manage both budgets and savings goals as separate entities,
+each with its own functionality, but all part of a larger Account object.
+
+4. Static Members
+4.1)The userCounter variable in the User class is static, meaning it is shared 
+across allinstances of the class and is used to generate a unique user ID.
+4.2) The CATEGORIES list in the Budget class is static because the list of budget 
+categories is common across all instances of the Budget class and does not depend
+on any instance-specific data.
+
+**/
