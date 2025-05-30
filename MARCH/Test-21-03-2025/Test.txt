@@ -1,0 +1,134 @@
+import java.util.* ; 
+class User{
+	String id ; 
+	int password ; 
+	String Name;
+	String email ;
+ 	Long contact ; 
+	String Address ; 
+	
+	public User(String Name , String id, String password ,  String email, String address ,Long contact ){
+		this.Name= Name; 
+		this.id = id;
+		this.passowrd= passoword ; 
+		this.email=  email;
+		this.contact = contact ;
+		this.address =  address;
+	}
+	public User(){}
+	void getId(){return id;}
+	void getName(){return name;}
+	void getpassowrd(){return password;}
+	void setpassword(String np){this.password = np;}
+	void getContact(){return contact;}
+	void getEmail(){return email;}
+}
+
+class AccountManager{
+	List<User> users =  new ArrayList<>();
+	HashMap<String , User> userMap =  new HashMap<>():
+	List<User> loggedInUsers = new ArrayList<>();
+	
+	public void Register(String name, String id, String password , String Address, String email, Long contact){
+		if(!userMap.keySet().contains(id)){
+			User me = new User(String name, String id, String password , String Address, String email, Long contact);
+			users.add(me);
+			userMap.add(id, me);
+		}
+	}
+
+	public void login(String id , String password){
+		if(userMap.keySet.contains(id) && userMap.get(id).getpassword().equals(password){
+			loggedInUsers.add(userMap.get(id));
+		}
+		else{
+			System.out.println("Invalid Credentials");
+		}	
+	}
+}
+class Account implements Tracker{
+	double balance ; 
+	User user ; 
+	`HashMap<User,balance> userAccount =  new HashMap<>();
+ 	
+	public Account(User user , String id , double balance){
+		this.user =  user ; 	
+		this.is = id ; 
+		this.balance =  balance ; 
+	}
+	
+	void getbalance(){return balance;}
+	void getid(){return id;}
+	void setbalance(double amount){return this.balance += balance ; }
+	
+	public void deposit(double amount){
+		setbalance(amount); 
+	}
+	
+	public void withdraw(double amount){
+		if(getbalance() > amount){
+			balance -= amount ; 
+		}
+		else{
+			System.out.println("Insufficient Balance");
+		}
+	}
+}
+class Budget{
+	String category ;
+	String double ; 
+	User user ; 
+	HashMap<String , Double> userBudgets = new HashMap<>():
+	HashMap<String , Double> userExpenses =new HashMap<>();
+	public Budget{
+		
+	}
+	public void deposit(double amount){
+		
+	}
+}
+
+class SavingGoal implements Tracker{
+
+}
+
+class SavingChallenge implements Tracker{
+}
+
+interface Tracker{
+	public void getBalance() ; 
+	public void getAnalysis() ; 
+	public void deposit();
+	public void withdraw();	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
