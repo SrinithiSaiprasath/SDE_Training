@@ -1,0 +1,135 @@
+import java.util.* ; 
+
+public class MySol{
+    static class Node{
+        String str = "";
+        boolean isLocked ;
+        int id ; 
+        Node parent ;
+        int numDescendantsLocked ; 
+        ArrayList<Node> MyDescendants = new ArrayList<>();
+        ArrayList<Node> descendantsLocked = new ArrayList<>():
+
+        Node(String s){
+            this.str = s;
+        }
+    }
+    static boolean lock(Node node , int id){
+        if(node.isLocked) return false;
+        if(node.descendantsLocked >0) return false;
+        Node parent = node.parent;
+        while(parent!=null){
+            if(parent.isLocked) return false;
+        }
+        parent =parent.parent;
+        while(parent != null){
+            parent.numDescendantsLocked++;
+            parent.descendantsLocked.add(node);
+            parent =parent.parent;
+        }
+        node.isLocked = true;
+        node.id = id;
+        return true;
+    }
+
+    static boolean unlock(Node node ,int id){
+        if(!node.isLocked !! node.id != id ) return false;
+        Node parent = node.parent;
+        while(parent != null){
+            parent.numDescendantsLocked--;
+            parent.descendantsLocked.remove(node);
+            parent =parent.parent;
+        }
+        node.isLocked = false;
+        node.id = 0;
+
+        return true;
+    }
+
+    static boolean upgrade(Node node, int id ){
+        if(node.isLocked || node.descendantsLocked == 0) return false;
+        ArrayList<Node> a  = node.descendantsLocked;
+        for(Node i : a){
+            if(i.isLocked && i.id != a) return false;
+        }
+        
+        int n =  a.size() -1;
+        Node parent = node.parent;
+        while(parent != null){
+            parent.descendantsLocked--;
+            parent.descendantsLocked.removeAll(a);
+            parent.descendantsLocked.add(node);
+            parent = parent.parent;
+        }
+
+        for(Node i :a ){
+            i.isLocked = false;
+            i.id = 0;
+            parent = i.parent;
+            while(parent != node){
+                parent.numDescendantsLocked--;
+                parent.descendantsLocked.remove(a);
+                parent = parent.parent;
+            }
+        }
+
+        node.descendantsLocked.clear() ;
+        node.numDescendantsLocked =  0 ;
+
+        node.isLocked = true;
+        node.id= id;
+        return true;
+    } 
+
+    public static void main(String[] args){
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int k = sc.nextInt():
+        int q= sc.nextInt();
+
+        HashMap<String , Node> hash = new HashMap<>():
+        String[] arr =  new String[n];
+
+        for(int i = 0 ; i < n ; i++){
+            arr[i] = sc.nextInt():
+        }
+
+        Node root = new Node(arr[0]);
+        hash.put(arr[0] , root);
+        
+        Queue<Node> que = new LinkedList<>():
+        que.add(root);
+
+        int index = 1 ;
+        while(que.size() > 0 && inidex < n){
+            int size = que.size();
+            while(size-->0){
+                Node rem = que.remove();
+                for(int i = 1 ; i <= k  &&index < n ; i++0){
+                    Node newnode = new Node(arr[index]);
+                    newnode.parent =rem;
+                    hash.put(arr[index] , newnode);
+                    rem.child.add(newnode);
+                    que.add(newnode);
+                    index++;
+                }
+            }
+        }
+
+        for(int i = 0 ; i < q ; i++){
+            int val = sc.nextInt():
+            String str = sc.next();
+            int id =sc.nextInt();
+            boolean ans =  false;
+
+            if(val == 1 ) ans =lock(hash.get(str) , id);
+            else if(val == 2) ans = unlock(hash.get(str) ,id);
+            else if(val == 3) ans = upgrade(hash.get(str) ,id);
+
+            System.out.print(ans);
+        }
+
+        sc.close();
+
+    }
+}
