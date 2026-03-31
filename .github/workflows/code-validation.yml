@@ -23,23 +23,53 @@ jobs:
           echo "🔍 Scanning for Java files..."
           find . -name "*.java" -type f ! -path "./.git/*" > java_files.txt
           echo "Found $(wc -l < java_files.txt) Java files"
+          echo ""
+          
+          # Create log file
+          log_file="java_compilation.log"
+          > "$log_file"
           
           # Compile each Java file
           failed_files=()
+          success_count=0
+          fail_count=0
+          
           while IFS= read -r java_file; do
-            echo "Compiling: $java_file"
-            if ! javac "$java_file" 2>&1; then
+            echo "📝 Compiling: $java_file"
+            
+            if ! javac "$java_file" 2>&1 | tee -a "$log_file"; then
               failed_files+=("$java_file")
-              echo "❌ Failed: $java_file"
+              echo "❌ FAILED: $java_file" | tee -a "$log_file"
+              ((fail_count++))
             else
-              echo "✅ Compiled: $java_file"
+              echo "✅ SUCCESS: $java_file" | tee -a "$log_file"
+              ((success_count++))
             fi
+            echo "---" >> "$log_file"
           done < java_files.txt
+          
+          # Print summary
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "📊 JAVA COMPILATION SUMMARY"
+          echo "════════════════════════════════════════"
+          echo "✅ Successful: $success_count"
+          echo "❌ Failed: $fail_count"
+          echo "════════════════════════════════════════"
+          echo ""
+          
+          # Show detailed logs
+          if [ -f "$log_file" ]; then
+            echo "📋 DETAILED LOGS:"
+            cat "$log_file"
+          fi
           
           if [ ${#failed_files[@]} -gt 0 ]; then
             echo ""
-            echo "❌ Compilation failed for:"
-            printf '%s\n' "${failed_files[@]}"
+            echo "❌ COMPILATION FAILED FOR:"
+            printf '%s\n' "${failed_files[@]}" | tee -a "$log_file"
+            echo ""
+            echo "❌ Fix the errors above and push again!"
             exit 1
           fi
           echo ""
@@ -63,21 +93,77 @@ jobs:
           echo "📝 Downloading Checkstyle..."
           wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.3.4/checkstyle-10.3.4-all.jar -q
           
-          echo "🔍 Checking Java code style..."
-          java -jar checkstyle-10.3.4-all.jar -c /google_checks.xml $(find . -name "*.java" -type f ! -path "./.git/*") || true
+          java_files=$(find . -name "*.java" -type f ! -path "./.git/*")
           
-          echo "✅ Code style check completed!"
+          if [ -z "$java_files" ]; then
+            echo "ℹ️  No Java files found for style check."
+          else
+            log_file="java_checkstyle.log"
+            > "$log_file"
+            
+            echo "🔍 Running Checkstyle on Java files..." | tee -a "$log_file"
+            echo "" | tee -a "$log_file"
+            
+            issue_count=0
+            for java_file in $java_files; do
+              echo "Checking: $java_file" | tee -a "$log_file"
+              output=$(java -jar checkstyle-10.3.4-all.jar -c /google_checks.xml "$java_file" 2>&1)
+              echo "$output" | tee -a "$log_file"
+              
+              if echo "$output" | grep -q "ERROR"; then
+                ((issue_count++))
+              fi
+              echo "---" >> "$log_file"
+            done
+            
+            echo ""
+            echo "════════════════════════════════════════"
+            echo "📊 JAVA CODE STYLE SUMMARY"
+            echo "════════════════════════════════════════"
+            echo "Total Java files checked: $(echo "$java_files" | wc -l)"
+            echo "Files with style issues: $issue_count"
+            echo "════════════════════════════════════════"
+            echo ""
+            echo "📋 DETAILED CHECKSTYLE LOGS:"
+            cat "$log_file"
+          fi
       
       - name: Check Python files (if any)
         run: |
           echo "🔍 Checking for Python files..."
-          if find . -name "*.py" -type f ! -path "./.git/*" | grep -q .; then
+          py_files=$(find . -name "*.py" -type f ! -path "./.git/*")
+          
+          if [ -z "$py_files" ]; then
+            echo "ℹ️  No Python files found."
+          else
             echo "Found Python files. Installing pylint..."
             pip install pylint -q
-            echo "Running pylint checks..."
-            find . -name "*.py" -type f ! -path "./.git/*" -exec pylint {} + || true
-          else
-            echo "No Python files found."
+            
+            log_file="python_quality.log"
+            > "$log_file"
+            
+            echo "📝 Running pylint checks..." | tee -a "$log_file"
+            echo "" | tee -a "$log_file"
+            
+            failed_count=0
+            for py_file in $py_files; do
+              echo "Checking: $py_file" | tee -a "$log_file"
+              if ! pylint "$py_file" 2>&1 | tee -a "$log_file"; then
+                ((failed_count++))
+              fi
+              echo "---" >> "$log_file"
+            done
+            
+            echo ""
+            echo "════════════════════════════════════════"
+            echo "📊 PYTHON CODE QUALITY SUMMARY"
+            echo "════════════════════════════════════════"
+            echo "Total Python files checked: $(echo "$py_files" | wc -l)"
+            echo "Files with issues: $failed_count"
+            echo "════════════════════════════════════════"
+            echo ""
+            echo "📋 DETAILED LOGS:"
+            cat "$log_file"
           fi
 
   summary:
@@ -89,15 +175,36 @@ jobs:
     steps:
       - name: Print Summary
         run: |
-          echo "✅ Workflow Completed!"
           echo ""
-          echo "📊 Results:"
-          echo "  - Java Compilation: ${{ needs.java-compilation.result }}"
-          echo "  - Code Quality: ${{ needs.code-quality.result }}"
+          echo "╔════════════════════════════════════════════════════════╗"
+          echo "║     🔍 GITHUB ACTIONS VALIDATION SUMMARY 🔍            ║"
+          echo "╚════════════════════════════════════════════════════════╝"
           echo ""
-          if [ "${{ needs.java-compilation.result }}" = "failure" ] || [ "${{ needs.code-quality.result }}" = "failure" ]; then
-            echo "❌ Some checks failed. Please review the logs above."
+          echo "📊 WORKFLOW RESULTS:"
+          echo "  • Java Compilation Status: ${{ needs.java-compilation.result }}"
+          echo "  • Code Quality Status: ${{ needs.code-quality.result }}"
+          echo ""
+          
+          if [ "${{ needs.java-compilation.result }}" = "failure" ]; then
+            echo "❌ Java Compilation Failed!"
+            echo "   → Check the compilation errors above"
+            echo "   → Fix the syntax errors in your Java files"
             exit 1
-          else
-            echo "✅ All checks passed!"
           fi
+          
+          if [ "${{ needs.code-quality.result }}" = "failure" ]; then
+            echo "⚠️  Code Quality Issues Found!"
+            echo "   → Review the checkstyle errors above"
+            echo "   → Follow Google Java Style Guide"
+          fi
+          
+          if [ "${{ needs.java-compilation.result }}" = "success" ] && [ "${{ needs.code-quality.result }}" = "success" ]; then
+            echo "✅ ALL CHECKS PASSED!"
+            echo "   • All Java files compiled successfully"
+            echo "   • Code quality standards met"
+          fi
+          
+          echo ""
+          echo "╔════════════════════════════════════════════════════════╗"
+          echo "║              🎯 WORKFLOW COMPLETED 🎯                   ║"
+          echo "╚════════════════════════════════════════════════════════╝"
