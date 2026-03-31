@@ -1,0 +1,103 @@
+name: Code Validation & Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  java-compilation:
+    runs-on: ubuntu-latest
+    name: Java Compilation Check
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      
+      - name: Find and compile all Java files
+        run: |
+          echo "🔍 Scanning for Java files..."
+          find . -name "*.java" -type f ! -path "./.git/*" > java_files.txt
+          echo "Found $(wc -l < java_files.txt) Java files"
+          
+          # Compile each Java file
+          failed_files=()
+          while IFS= read -r java_file; do
+            echo "Compiling: $java_file"
+            if ! javac "$java_file" 2>&1; then
+              failed_files+=("$java_file")
+              echo "❌ Failed: $java_file"
+            else
+              echo "✅ Compiled: $java_file"
+            fi
+          done < java_files.txt
+          
+          if [ ${#failed_files[@]} -gt 0 ]; then
+            echo ""
+            echo "❌ Compilation failed for:"
+            printf '%s\n' "${failed_files[@]}"
+            exit 1
+          fi
+          echo ""
+          echo "✅ All Java files compiled successfully!"
+
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Code Quality & Formatting
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      
+      - name: Check Java code with Checkstyle
+        run: |
+          echo "📝 Downloading Checkstyle..."
+          wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.3.4/checkstyle-10.3.4-all.jar -q
+          
+          echo "🔍 Checking Java code style..."
+          java -jar checkstyle-10.3.4-all.jar -c /google_checks.xml $(find . -name "*.java" -type f ! -path "./.git/*") || true
+          
+          echo "✅ Code style check completed!"
+      
+      - name: Check Python files (if any)
+        run: |
+          echo "🔍 Checking for Python files..."
+          if find . -name "*.py" -type f ! -path "./.git/*" | grep -q .; then
+            echo "Found Python files. Installing pylint..."
+            pip install pylint -q
+            echo "Running pylint checks..."
+            find . -name "*.py" -type f ! -path "./.git/*" -exec pylint {} + || true
+          else
+            echo "No Python files found."
+          fi
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Validation Summary
+    needs: [java-compilation, code-quality]
+    if: always()
+    
+    steps:
+      - name: Print Summary
+        run: |
+          echo "✅ Workflow Completed!"
+          echo ""
+          echo "📊 Results:"
+          echo "  - Java Compilation: ${{ needs.java-compilation.result }}"
+          echo "  - Code Quality: ${{ needs.code-quality.result }}"
+          echo ""
+          if [ "${{ needs.java-compilation.result }}" = "failure" ] || [ "${{ needs.code-quality.result }}" = "failure" ]; then
+            echo "❌ Some checks failed. Please review the logs above."
+            exit 1
+          else
+            echo "✅ All checks passed!"
+          fi
